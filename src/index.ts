@@ -5,16 +5,38 @@ import * as path from 'node:path'
 import * as process from "node:process";
 
 function main() {
-  if (fs.existsSync(path.join(process.cwd(), '.agents', 'skills'))) {
-    fs.mkdirSync(path.join(process.cwd(), '.claude'), { recursive: true })
-    fs.rmSync(path.join(process.cwd(), '.claude', 'skills'), { force: true, recursive: true })
-    fs.symlinkSync('../.agents/skills', path.join(process.cwd(), '.claude', 'skills'))
+  const cwd = process.cwd()
+  const agentsDir = path.join(cwd, '.agents')
+  const agentsSkillsDir = path.join(agentsDir, 'skills')
+  const claudeDir = path.join(cwd, '.claude')
+  const claudeSkillsDir = path.join(claudeDir, 'skills')
+  const agentsMdPath = path.join(cwd, 'AGENTS.md')
+  const claudeMdPath = path.join(cwd, 'CLAUDE.md')
+
+  fs.mkdirSync(agentsDir, { recursive: true })
+  fs.mkdirSync(claudeDir, { recursive: true })
+
+  if (!fs.existsSync(agentsSkillsDir)) {
+    if (fs.existsSync(claudeSkillsDir)) {
+      fs.cpSync(claudeSkillsDir, agentsSkillsDir, { recursive: true, dereference: true })
+    } else {
+      fs.mkdirSync(agentsSkillsDir, { recursive: true })
+    }
   }
 
-  if (fs.existsSync(path.join(process.cwd(), 'AGENTS.md'))) {
-    fs.rmSync(path.join(process.cwd(), 'CLAUDE.md'), { force: true })
-    fs.symlinkSync('AGENTS.md', path.join(process.cwd(), 'CLAUDE.md'))
+  fs.rmSync(claudeSkillsDir, { force: true, recursive: true })
+  fs.symlinkSync('../.agents/skills', claudeSkillsDir)
+
+  if (!fs.existsSync(agentsMdPath)) {
+    if (fs.existsSync(claudeMdPath)) {
+      fs.cpSync(claudeMdPath, agentsMdPath)
+    } else {
+      fs.writeFileSync(agentsMdPath, '')
+    }
   }
+
+  fs.rmSync(claudeMdPath, { force: true })
+  fs.symlinkSync('AGENTS.md', claudeMdPath)
 }
 
 if (require.main === module) {
